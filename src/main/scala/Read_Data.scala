@@ -1,4 +1,5 @@
 import org.apache.log4j._
+import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 object Read_Data {
@@ -36,7 +37,8 @@ object Read_Data {
       .option("user", user)
       .option("password", password)
       .option("driver", "com.mysql.cj.jdbc.Driver")
-      .load())
+      .load()).persist()
+
 
 
     val DF = ordersDF.join(custDF,ordersDF("customerID") ===  custDF("customerID"),"inner").
@@ -46,9 +48,6 @@ object Read_Data {
 
     DF.show()
 
-
-
-
     DF.write.format("jdbc")
       .option("url","jdbc:mysql://localhost:3306/" + "BatachTarget")
       .option("dbtable", "customerDetail")
@@ -57,5 +56,20 @@ object Read_Data {
       .option("driver", "com.mysql.cj.jdbc.Driver")
       .mode(SaveMode.Overwrite)
       .save()
+
+
+    //updated delivery table
+    val delDF1=deliveryDF.withColumn("amount", col("amount") + 100)
+    delDF1.show()
+
+    delDF1.write.format("jdbc")
+      .option("url","jdbc:mysql://localhost:3306/" + "BatchSource")
+      .option("dbtable", "delivery")
+      .option("user", "root")
+      .option("password", "mysql1122")
+      .option("driver", "com.mysql.cj.jdbc.Driver")
+      .mode("overwrite")
+      .save()
+
   }
 }
